@@ -1,0 +1,107 @@
+const PastebinAPI = require('pastebin-js');
+const pastebin = new PastebinAPI('EMWTMkQAVfJa9kM-MRUrxd5Oku1U7pgL');
+const { makeid } = require('./id');
+const express = require('express');
+const fs = require('fs');
+let router = express.Router();
+const pino = require('pino');
+const {
+    default: Mikael_Tech,
+    useMultiFileAuthState,
+    delay,
+    makeCacheableSignalKeyStore,
+    Browsers
+} = require('@whiskeysockets/baileys');
+
+function removeFile(FilePath) {
+    if (!fs.existsSync(FilePath)) return false;
+    fs.rmSync(FilePath, { recursive: true, force: true });
+}
+
+router.get('/', async (req, res) => {
+    const id = makeid();
+    let num = req.query.number;
+    
+    async function Mikael_PAIR_CODE() {
+        const { state, saveCreds } = await useMultiFileAuthState('./temp/' + id);
+        try {
+            let Pair_Code_By_Mikael_Tech = Mikael_Tech({
+                auth: {
+                    creds: state.creds,
+                    keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'fatal' }).child({ level: 'fatal' })),
+                },
+                printQRInTerminal: false,
+                logger: pino({ level: 'fatal' }).child({ level: 'fatal' }),
+                browser: Browsers.macOS('Chrome')
+            });
+
+            if (!Pair_Code_By_Mikael_Tech.authState.creds.registered) {
+                await delay(1500);
+                num = num.replace(/[^0-9]/g, '');
+                const code = await Pair_Code_By_Mikael_Tech.requestPairingCode(num);
+                if (!res.headersSent) {
+                    await res.send({ code });
+                }
+            }
+
+            Pair_Code_By_Mikael_Tech.ev.on('creds.update', saveCreds);
+            Pair_Code_By_Mikael_Tech.ev.on('connection.update', async (s) => {
+                const { connection, lastDisconnect } = s;
+                if (connection === 'open') {
+                    await delay(5000);
+                    let data = fs.readFileSync(__dirname + `/temp/${id}/creds.json`);
+                    await delay(800);
+                    let b64data = Buffer.from(data).toString('base64');
+                    let session = await Pair_Code_By_Mikael_Tech.sendMessage(Pair_Code_By_Mikael_Tech.user.id, { text: 'starcore~' + b64data });
+
+                    let FEARTHERINA_BOT_TEXT = `
+
+╭─═━⌬━═─⊹⊱✦⊰⊹─═━⌬━═─ 
+╎   『 𝐒𝐄𝐒𝐒𝐈𝐎𝐍 𝐂𝐎𝐍𝐍𝐄𝐂𝐓𝐄𝐃 』   
+╎  ✦ feartherina sᴇssɪᴏɴ
+╎  ✦  ʙʏ ᴅᴇᴠ ᴍikael
+╰╴╴╴╴
+
+▌   『 🔐 𝐒𝐄𝐋𝐄𝐂𝐓𝐄𝐃 𝐒𝐄𝐒𝐒𝐈𝐎𝐍 』   
+▌  • Session ID:  
+▌  ⛔ [ Please set your SESSION_ID ] 
+
+╔═
+╟   『 𝐂𝐎𝐍𝐓𝐀𝐂𝐓 & 𝐒𝐔𝐏𝐏𝐎𝐑𝐓 』  
+╟  🎥 𝐘𝐨𝐮𝐓𝐮𝐛𝐞: youtube.com/@xmjenifer  
+╟  👑 𝐎𝐰𝐧𝐞𝐫: 22606527293  
+╟  💻 𝐑𝐞𝐩𝐨: github.com/mikaelkabore750-tech/FEARTHERINA-BOT-  
+╟  👥 𝐖𝐚𝐆𝐫𝐨𝐮𝐩: https://chat.whatsapp.com/DbnJGPwfyseF8ejtYvnLum 
+╟  📢 𝐖𝐚𝐂𝐡𝐚𝐧𝐧𝐞𝐥: https://whatsapp.com/channel/0029Vb6s5JpDzgT69NCS7i1a 
+╟  📸 𝐈𝐧𝐬𝐭𝐚: instagram.com/dekusôta  
+╰  
+✦⋅⋆⋅⋆⋅⋆⋅⋆⋅⋆⋅⋆⋅⋆⋅⋆⋅⋆⋅⋆⋅✦  
+   𝐄𝐍𝐉𝐎𝐘 𝐅𝐄𝐀𝐑𝐓𝐇𝐄𝐑𝐈𝐍𝐀-𝐁𝐎𝐓!  
+✦⋅⋆⋅⋆⋅⋆⋅⋆⋅⋆⋅⋆⋅⋆⋅⋆⋅⋆⋅⋆⋅✦  
+______________________________
+★彡[ᴅᴏɴ'ᴛ ғᴏʀɢᴇᴛ ᴛᴏ sᴛᴀʀ ᴛʜᴇ ʀᴇᴘᴏ!]彡★
+`;
+
+                    await Pair_Code_By_Mikael_Tech.sendMessage(Pair_Code_By_Mikael_Tech.user.id, { text: FEARTHERINA_BOT_TEXT }, { quoted: session });
+
+                    await delay(100);
+                    await Pair_Code_By_Mikael_Tech.ws.close();
+                    return await removeFile('./temp/' + id);
+                } else if (connection === 'close' && lastDisconnect && lastDisconnect.error && lastDisconnect.error.output.statusCode != 401) {
+                    await delay(10000);
+                    Mikael_PAIR_CODE();
+                }
+            });
+        } catch (err) {
+            console.log('Service restarted');
+            await removeFile('./temp/' + id);
+            if (!res.headersSent) {
+                await res.send({ code: 'Service Currently Unavailable' });
+            }
+        }
+    }
+    
+    return await Mikael_PAIR_CODE();
+});
+
+module.exports = router;
